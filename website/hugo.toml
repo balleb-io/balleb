@@ -1,0 +1,7 @@
+baseURL = 'https://balleb.io/'
+languageCode = 'en-us'
+title = 'Balleb'
+theme = 'blog'
+sectionPagesMenu = 'main'
+[params]
+    hideMadeWithLine = true
