@@ -1,3 +1,4 @@
+import pdb
 import sys
 
 outputPath = "./testData/"
@@ -10,14 +11,17 @@ except:
 import gzip
 import numpy as np
 
-dataWidth = 32                    #specify the number of bits in test data
-IntSize = 1 #Number of bits of integer portion including sign bit
 
 try:
     testDataNum = int(sys.argv[1])
 except:
     testDataNum = 3
 
+# probably rewrite this
+'''
+    DtoB converts your floating point number into fixed point representation with fracBits bits dedicated
+    to the decimal part and (dataWidth - fracBits) dedicated to the integer part
+'''
 def DtoB(num,dataWidth,fracBits):                        #funtion for converting into two's complement format
     if num >= 0:
         num = num * (2**fracBits)
@@ -31,7 +35,6 @@ def DtoB(num,dataWidth,fracBits):                        #funtion for converting
         else:
             d = 2**dataWidth - num
     return d
-
 
 def load_data():
     f = gzip.open('mnist.pkl.gz', 'rb')         #change this location to the resiprositry where MNIST dataset sits
@@ -75,32 +78,47 @@ def genTestData(dataWidth,IntSize,testDataNum):
     dataHeaderFile.write('int result='+str(te_d[1][testDataNum])+';\n')
     dataHeaderFile.close()
         
+
+def fixedToFloat(bin_str: str) -> float:
+    power = 0.5
+    res = 0
+    for i in bin_str:
+        if i == '1': res += power
+        power /=2 
+    return res
         
 def genAllTestData(dataWidth,IntSize):
     tr_d, va_d, te_d = load_data()
+    # what is this reshape doing?
     test_inputs = [np.reshape(x, (1, 784)) for x in te_d[0]]
     x = len(test_inputs[0][0])
+    # What is dataWidth and IntSize?
     d=dataWidth-IntSize
-    for i in range(100):
-        if i < 10:
-            ext = "000"+str(i)
-        elif i < 100:
-            ext = "00"+str(i)
-        elif i < 1000:
-            ext = "0"+str(i)
-        else:
-            ext = str(i)
+    for i in range(1):
+        ext = str(i).zfill(4)
+        ###
         fileName = 'test_data_'+ext+'.txt'
         f = open(outputPath+fileName,'w')
+        # iterates over each pixel
         for j in range(0,x):
             dInDec = DtoB(test_inputs[i][0][j],dataWidth,d)
-            myData = bin(dInDec)[2:]
+            myData = bin(dInDec)[2:].ljust(31, "0")
+            pixel = test_inputs[i][0][j]
+            to_fixed_and_back = fixedToFloat(myData)
+            if (test_inputs[i][0][j] != 0): print(str(pixel).ljust(10), "->", myData, "->", str(to_fixed_and_back).ljust(10), "-> delta = %", str((abs(pixel - to_fixed_and_back)/pixel) * 100).ljust(12), "->", (str(len(myData)) +  " bits"))
             f.write(myData+'\n')
+        print("Answer:", te_d[1][i])
         f.write(bin(DtoB((te_d[1][i]),dataWidth,0))[2:])
         f.close()
 
 
 
+# this is all inconsistent
+# how is the sign bit used
+        
+
 if __name__ == "__main__":
     #genTestData(dataWidth,IntSize,testDataNum=1)
+    dataWidth = 32                    #specify the number of bits in test data
+    IntSize = 1 #Number of bits of integer portion including sign bit
     genAllTestData(dataWidth,IntSize)
