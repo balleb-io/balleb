@@ -25,15 +25,13 @@ if(not os.path.isdir(headerFilePath)):
     os.mkdir(headerFilePath)
     print(f"Created directory {headerFilePath}")
 
-# probably rewrite this
 '''
     DtoB converts your floating point number into fixed point representation with fracBits bits dedicated
     to the decimal part and (dataWidth - fracBits) dedicated to the integer part
 '''
-def FloatToFix(floatNumber, fracBits, totalBits):                        #funtion for converting into two's complement format
+def FloatToFix(floatNumber, fracBits, totalBits):             
     fixPoint = int(round(abs(floatNumber) * (2**fracBits)))
     fixPointBinary = bitstring.BitArray(int=fixPoint, length=totalBits)
-    
     bin_list = list(fixPointBinary.bin)
    
     if(floatNumber < 0):
@@ -98,37 +96,42 @@ def fixedToFloat(bin_str, fracBits, totalBits) -> float:
 
     return sign * (intRepresentation * 1.0)/(2 ** fracBits)
         
-def genAllTestData(dataWidth,IntSize):
-    tr_d, va_d, te_d = load_data()
+def genAllTestData(dataWidth: int, IntSize: int, cases: int = 0, debug: bool = False) -> None:
+    if IntSize <= 0: 
+        print(f"Invalid integer portion ({IntSize}) of fixed point representation specified")
+        return
+
+    _, _, te_d = load_data()
     
-    # what is this reshape doing?
-    # this guy is crazy
-    
-    test_inputs = [np.reshape(x, (1, 784)) for x in te_d[0]]
-    
-    x = len(test_inputs[0][0])
-    
+    test_inputs = te_d[0] 
+    input_size = len(test_inputs[0])
+
     # What is dataWidth and IntSize?
-    #Asnwer: This is the radix point AKA:
+    #Answer: This is the radix point AKA:
     #place to put the comma
     
     radixPoint = dataWidth-IntSize
+
+    cases = len(test_inputs) if cases == 0 else cases
     
-    for i in range(1):
+    for i in range(cases):
         ext = str(i).zfill(4)
         ###
         fileName = 'test_data_'+ext+'.txt'
         f = open(outputPath+fileName,'w')
         # iterates over each pixel
-        for j in range(0,x):
-            fixedPointBinary = FloatToFix(test_inputs[i][0][j],radixPoint, dataWidth)
-            pixel =test_inputs[i][0][j]
+        for j in range(0,input_size):
+            fixedPointBinary = FloatToFix(test_inputs[i][j],radixPoint, dataWidth)
+            pixel =test_inputs[i][j]
             to_fixed_and_back = fixedToFloat(fixedPointBinary, radixPoint, dataWidth)
             
-            if (test_inputs[i][0][j] != 0): print(str(pixel).ljust(10), "->", fixedPointBinary, "->", str(to_fixed_and_back).ljust(10), "-> delta = %", str((abs(pixel - to_fixed_and_back)/pixel) * 100).ljust(12), "->", (str(len(fixedPointBinary)) +  " bits"))
+            if debug and test_inputs[i][j] != 0: print(str(pixel).ljust(10), "->", fixedPointBinary, "->", str(to_fixed_and_back).ljust(10), "-> delta = %", str((abs(pixel - to_fixed_and_back)/pixel) * 100).ljust(12), "->", (str(len(fixedPointBinary)) +  " bits"))
             f.write(fixedPointBinary+'\n')
         
-        print("Answer:", te_d[1][i])
+        if debug: print("Answer:", te_d[1][i])
+        if te_d[1][i] >= 2**(IntSize - 1): 
+            print(f"Error: integer representation part too small to fit dependent variable -> {te_d[1][i]} too large for {IntSize} bits")
+            return
         f.write(FloatToFix((te_d[1][i]), radixPoint, dataWidth))
         f.close()
 
@@ -141,5 +144,5 @@ def genAllTestData(dataWidth,IntSize):
 if __name__ == "__main__":
     #genTestData(dataWidth,IntSize,testDataNum=1)
     dataWidth = 32                    #specify the number of bits in test data
-    IntSize = 4 #Number of bits of integer portion including sign bit
-    genAllTestData(dataWidth,IntSize)
+    IntSize = 5 #Number of bits of integer portion including sign bit
+    genAllTestData(dataWidth,IntSize, 10, debug=False)
