@@ -10,31 +10,34 @@ except:
     import pickle
 import gzip
 import numpy as np
-
+import os
+import bitstring
 
 try:
     testDataNum = int(sys.argv[1])
 except:
     testDataNum = 3
 
-# probably rewrite this
+if(not os.path.isdir(outputPath)):
+    os.mkdir(outputPath)
+    print(f"Created directory {outputPath}")
+if(not os.path.isdir(headerFilePath)):
+    os.mkdir(headerFilePath)
+    print(f"Created directory {headerFilePath}")
+
 '''
     DtoB converts your floating point number into fixed point representation with fracBits bits dedicated
     to the decimal part and (dataWidth - fracBits) dedicated to the integer part
 '''
-def DtoB(num,dataWidth,fracBits):                        #funtion for converting into two's complement format
-    if num >= 0:
-        num = num * (2**fracBits)
-        d = int(num)
-    else:
-        num = -num
-        num = num * (2**fracBits)        #number of fractional bits
-        num = int(num)
-        if num == 0:
-            d = 0
-        else:
-            d = 2**dataWidth - num
-    return d
+def FloatToFix(floatNumber, fracBits, totalBits):             
+    fixPoint = int(round(abs(floatNumber) * (2**fracBits)))
+    fixPointBinary = bitstring.BitArray(int=fixPoint, length=totalBits)
+    bin_list = list(fixPointBinary.bin)
+   
+    if(floatNumber < 0):
+        bin_list[0] = "1"
+
+    return ''.join(bin_list)
 
 def load_data():
     f = gzip.open('mnist.pkl.gz', 'rb')         #change this location to the resiprositry where MNIST dataset sits
@@ -60,7 +63,7 @@ def genTestData(dataWidth,IntSize,testDataNum):
     k = open('testData.txt','w')
     for i in range(0,x):
         k.write(str(test_inputs[testDataNum][0][i])+',')
-        dInDec = DtoB(test_inputs[testDataNum][0][i],dataWidth,d)
+        dInDec = FloatToFix(test_inputs[testDataNum][0][i] ,dataWidth,d)
         myData = bin(dInDec)[2:]
         dataHeaderFile.write(str(dInDec)+',')
         f.write(myData+'\n')
@@ -79,36 +82,57 @@ def genTestData(dataWidth,IntSize,testDataNum):
     dataHeaderFile.close()
         
 
-def fixedToFloat(bin_str: str) -> float:
-    power = 0.5
-    res = 0
-    for i in bin_str:
-        if i == '1': res += power
-        power /=2 
-    return res
+def fixedToFloat(bin_str, fracBits, totalBits) -> float:
+    
+    bit_list = list(bin_str)
+    sign = 1
+    if(bit_list[0] == "1"):
+        sign = -1
+        bit_list[0] = "0"
+
+    bin_str = ''.join(bit_list)
+
+    intRepresentation = int(bin_str, 2)
+
+    return sign * (intRepresentation * 1.0)/(2 ** fracBits)
         
-def genAllTestData(dataWidth,IntSize):
-    tr_d, va_d, te_d = load_data()
-    # what is this reshape doing?
-    test_inputs = [np.reshape(x, (1, 784)) for x in te_d[0]]
-    x = len(test_inputs[0][0])
+def genAllTestData(dataWidth: int, IntSize: int, cases: int = 0, debug: bool = False) -> None:
+    if IntSize <= 0: 
+        print(f"Invalid integer portion ({IntSize}) of fixed point representation specified")
+        return
+
+    _, _, te_d = load_data()
+    
+    test_inputs = te_d[0] 
+    input_size = len(test_inputs[0])
+
     # What is dataWidth and IntSize?
-    d=dataWidth-IntSize
-    for i in range(1):
+    #Answer: This is the radix point AKA:
+    #place to put the comma
+    
+    radixPoint = dataWidth-IntSize
+
+    cases = len(test_inputs) if cases == 0 else cases
+    
+    for i in range(cases):
         ext = str(i).zfill(4)
         ###
         fileName = 'test_data_'+ext+'.txt'
         f = open(outputPath+fileName,'w')
         # iterates over each pixel
-        for j in range(0,x):
-            dInDec = DtoB(test_inputs[i][0][j],dataWidth,d)
-            myData = bin(dInDec)[2:].ljust(31, "0")
-            pixel = test_inputs[i][0][j]
-            to_fixed_and_back = fixedToFloat(myData)
-            if (test_inputs[i][0][j] != 0): print(str(pixel).ljust(10), "->", myData, "->", str(to_fixed_and_back).ljust(10), "-> delta = %", str((abs(pixel - to_fixed_and_back)/pixel) * 100).ljust(12), "->", (str(len(myData)) +  " bits"))
-            f.write(myData+'\n')
-        print("Answer:", te_d[1][i])
-        f.write(bin(DtoB((te_d[1][i]),dataWidth,0))[2:])
+        for j in range(0,input_size):
+            fixedPointBinary = FloatToFix(test_inputs[i][j],radixPoint, dataWidth)
+            pixel =test_inputs[i][j]
+            to_fixed_and_back = fixedToFloat(fixedPointBinary, radixPoint, dataWidth)
+            
+            if debug and test_inputs[i][j] != 0: print(str(pixel).ljust(10), "->", fixedPointBinary, "->", str(to_fixed_and_back).ljust(10), "-> delta = %", str((abs(pixel - to_fixed_and_back)/pixel) * 100).ljust(12), "->", (str(len(fixedPointBinary)) +  " bits"))
+            f.write(fixedPointBinary+'\n')
+        
+        if debug: print("Answer:", te_d[1][i])
+        if te_d[1][i] >= 2**(IntSize - 1): 
+            print(f"Error: integer representation part too small to fit dependent variable -> {te_d[1][i]} too large for {IntSize} bits")
+            return
+        f.write(FloatToFix((te_d[1][i]), radixPoint, dataWidth))
         f.close()
 
 
@@ -120,5 +144,5 @@ def genAllTestData(dataWidth,IntSize):
 if __name__ == "__main__":
     #genTestData(dataWidth,IntSize,testDataNum=1)
     dataWidth = 32                    #specify the number of bits in test data
-    IntSize = 1 #Number of bits of integer portion including sign bit
-    genAllTestData(dataWidth,IntSize)
+    IntSize = 5 #Number of bits of integer portion including sign bit
+    genAllTestData(dataWidth,IntSize, 10, debug=False)
