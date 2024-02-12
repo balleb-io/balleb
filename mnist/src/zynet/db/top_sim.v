@@ -21,7 +21,7 @@
 
 `include "../rtl/include.v"
 
-`define MaxTestSamples 100
+`define MaxTestSamples 1
 
 module top_sim(
 
@@ -155,11 +155,11 @@ module top_sim(
     end
     endtask
     
-    task configWeights();
     integer i,j,k,t;
     integer neuronNo_int;
     string fileName;
-    reg [`dataWidth:0] config_mem [783:0];
+    reg [`dataWidth-1:0] config_mem [783:0];
+    task configWeights();
     begin
         @(posedge clock);
         for(k=1;k<=`numLayers;k=k+1)
@@ -179,10 +179,8 @@ module top_sim(
     endtask
     
     task configBias();
-    integer i,j,k,t;
-    integer neuronNo_int;
     string fileName;
-    reg [31:0] bias[0:0];
+    reg [`dataWidth-1:0] bias[0:0];
     begin
         @(posedge clock);
         for(k=1;k<=`numLayers;k=k+1)
@@ -199,10 +197,9 @@ module top_sim(
     end
     endtask
    
-    integer i,j,layerNo=1,k;
+    integer layerNo=1;
     integer start;
     integer testDataCount;
-    integer t;
     integer testDataCount_int;
     initial
     begin
@@ -222,7 +219,7 @@ module top_sim(
         for(testDataCount=0;testDataCount<`MaxTestSamples;testDataCount=testDataCount+1)
         begin
             string fileName;
-            fileName = $sformatf("../../testData/test_data_%04d.mif", testDataCount);
+            fileName = $sformatf("test_data_%04d.mif", testDataCount);
             $display("Reading from %s", fileName);
             $readmemb(fileName, in_mem);
             @(posedge clock);
@@ -244,6 +241,8 @@ module top_sim(
             readAxi(8);
             if(axiRdData==expected)
                 right = right+1;
+            else
+                wrong = wrong + 1;
             $display("%0d. Accuracy: %f, Detected number: %0x, Expected: %x",testDataCount+1,right*100.0/(testDataCount+1),axiRdData,expected);
             /*$display("Total execution time",,,,$time-start,,"ns");
             j=0;

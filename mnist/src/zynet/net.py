@@ -1,5 +1,5 @@
-from zynet import gen_nn
-from zynet import genWegitsAndBias
+from zynet.gen_nn import gen_nn
+from zynet.genWeights import genWeights
 import os
 from zynet import xilinxUtils
 
@@ -23,10 +23,10 @@ class model:
         self.layers.append(layer)
     def getNumLayers(self):
         return self.numLayers
-    def compile(self,pretrained='No',weights="",biases="",dataWidth=16,sigmoidSize=5,weightIntSize=1,inputIntSize=4):
-        gen_nn.gen_nn(self.numLayers,self.layers,dataWidth,pretrained=pretrained,weights=weights,biases=biases,sigmoidSize=sigmoidSize,weightIntSize=weightIntSize,inputIntSize=inputIntSize)
-        if pretrained=='Yes':
-            genWegitsAndBias.genWegitsAndBias(dataWidth,dataWidth-weightIntSize,dataWidth-weightIntSize-inputIntSize,weights,biases)
+    def compile(self, pretrained: bool =False, weights: list = [],biases: list = [],dataWidth=16,sigmoidSize=5,weightIntSize=1,inputIntSize=4):
+        gen_nn(self.numLayers,self.layers,dataWidth,pretrained=pretrained,weights=weights,biases=biases,sigmoidSize=sigmoidSize,weightIntSize=weightIntSize,inputIntSize=inputIntSize)
+        if pretrained:
+            genWeights(dataWidth, dataWidth - weightIntSize, dataWidth - weightIntSize, weights, biases)
     
 def makeXilinxProject(projectName='myProject',fpgaPart='xc7z020clg484-1'):
     xilinxUtils.makeVivadoProject(projectName,fpgaPart)
