@@ -1,8 +1,7 @@
-import pdb
 import sys
 
-outputPath = "./testData/"
-headerFilePath = "./testData/"
+outputPath = "./src/fpga/testData/"
+headerFilePath = "./src/fpga/testData/"
 
 try:
     import cPickle as pickle
@@ -11,7 +10,7 @@ except:
 import gzip
 import numpy as np
 import os
-import bitstring
+from zynet.utils import floatToFix, fixedToFloat
 
 try:
     testDataNum = int(sys.argv[1])
@@ -24,20 +23,6 @@ if(not os.path.isdir(outputPath)):
 if(not os.path.isdir(headerFilePath)):
     os.mkdir(headerFilePath)
     print(f"Created directory {headerFilePath}")
-
-'''
-    DtoB converts your floating point number into fixed point representation with fracBits bits dedicated
-    to the decimal part and (dataWidth - fracBits) dedicated to the integer part
-'''
-def FloatToFix(floatNumber, fracBits, totalBits):             
-    fixPoint = int(round(abs(floatNumber) * (2**fracBits)))
-    fixPointBinary = bitstring.BitArray(int=fixPoint, length=totalBits)
-    bin_list = list(fixPointBinary.bin)
-   
-    if(floatNumber < 0):
-        bin_list[0] = "1"
-
-    return ''.join(bin_list)
 
 def load_data():
     f = gzip.open('mnist.pkl.gz', 'rb')         #change this location to the resiprositry where MNIST dataset sits
@@ -63,7 +48,7 @@ def genTestData(dataWidth,IntSize,testDataNum):
     k = open('testData.txt','w')
     for i in range(0,x):
         k.write(str(test_inputs[testDataNum][0][i])+',')
-        dInDec = FloatToFix(test_inputs[testDataNum][0][i] ,dataWidth,d)
+        dInDec = floatToFix(test_inputs[testDataNum][0][i] ,dataWidth,d)
         myData = bin(dInDec)[2:]
         dataHeaderFile.write(str(dInDec)+',')
         f.write(myData+'\n')
@@ -82,19 +67,6 @@ def genTestData(dataWidth,IntSize,testDataNum):
     dataHeaderFile.close()
         
 
-def fixedToFloat(bin_str, fracBits, totalBits) -> float:
-    
-    bit_list = list(bin_str)
-    sign = 1
-    if(bit_list[0] == "1"):
-        sign = -1
-        bit_list[0] = "0"
-
-    bin_str = ''.join(bit_list)
-
-    intRepresentation = int(bin_str, 2)
-
-    return sign * (intRepresentation * 1.0)/(2 ** fracBits)
         
 def genAllTestData(dataWidth: int, IntSize: int, cases: int = 0, debug: bool = False) -> None:
     if IntSize <= 0: 
@@ -121,7 +93,7 @@ def genAllTestData(dataWidth: int, IntSize: int, cases: int = 0, debug: bool = F
         f = open(outputPath+fileName,'w')
         # iterates over each pixel
         for j in range(0,input_size):
-            fixedPointBinary = FloatToFix(test_inputs[i][j],radixPoint, dataWidth)
+            fixedPointBinary = floatToFix(test_inputs[i][j],radixPoint, dataWidth)
             pixel =test_inputs[i][j]
             to_fixed_and_back = fixedToFloat(fixedPointBinary, radixPoint, dataWidth)
             
@@ -132,7 +104,7 @@ def genAllTestData(dataWidth: int, IntSize: int, cases: int = 0, debug: bool = F
         if te_d[1][i] >= 2**(IntSize - 1): 
             print(f"Error: integer representation part too small to fit dependent variable -> {te_d[1][i]} too large for {IntSize} bits")
             return
-        f.write(FloatToFix((te_d[1][i]), radixPoint, dataWidth))
+        f.write(floatToFix((te_d[1][i]), radixPoint, dataWidth))
         f.close()
 
 
@@ -145,4 +117,4 @@ if __name__ == "__main__":
     #genTestData(dataWidth,IntSize,testDataNum=1)
     dataWidth = 32                    #specify the number of bits in test data
     IntSize = 5 #Number of bits of integer portion including sign bit
-    genAllTestData(dataWidth,IntSize, 10, debug=False)
+    genAllTestData(dataWidth,IntSize, 10, debug=True)

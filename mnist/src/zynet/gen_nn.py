@@ -5,7 +5,8 @@ from shutil import copyfile
 from os import path
 
 sourceFilePath = "./src/fpga/rtl/"
-tbFilePath = "./src/fpga/tb/"
+tbFilePath = "./src/fpga/rtl/"
+weightsFilePath = "./src/fpga/weights/"
 
 def writeIncludeFile(pretrained,numDenseLayers,dataWidth,layers,sigmoidSize,weightIntSize):
     # Create target Directory if don't exist
@@ -13,6 +14,8 @@ def writeIncludeFile(pretrained,numDenseLayers,dataWidth,layers,sigmoidSize,weig
         os.makedirs(sourceFilePath)
     if not os.path.exists(tbFilePath):
         os.makedirs(tbFilePath)
+    if not os.path.exists(weightsFilePath):
+        os.makedirs(weightsFilePath)
     f = open(sourceFilePath+"include.v","w")
     if pretrained == "Yes":
         f.write('`define pretrained\n')
@@ -63,7 +66,8 @@ def genLayer(layerNum,numNeurons,actType):
     
     
 def gentb():
-    copyfile(path.join(path.dirname(__file__), 'db/top_sim.v'), tbFilePath+'top_sim.v')
+    copyfile(path.join(path.dirname(__file__), 'db/top_sim.py'), tbFilePath+'top_sim.py')
+    copyfile(path.join(path.dirname(__file__), 'db/makefile'), tbFilePath+'makefile')
     
 def gen_nn(numLayers=0,layers=[],dataWidth=0,pretrained='Yes',weights=[],biases=[],sigmoidSize=10,weightIntSize=1,inputIntSize=4):
     #Sanity checks
