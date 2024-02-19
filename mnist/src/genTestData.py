@@ -1,8 +1,7 @@
-import pdb
 import sys
 
-outputPath = "./testData/"
-headerFilePath = "./testData/"
+outputPath = "./src/fpga/testData/"
+headerFilePath = "./src/fpga/testData/"
 
 try:
     import cPickle as pickle

@@ -1,4 +1,4 @@
-outputPath = "./src/fpga/rtl/"
+outputPath = "./src/fpga/weights/"
 headerPath = "."
 
 from zynet.utils import floatToFix, fixedToFloat

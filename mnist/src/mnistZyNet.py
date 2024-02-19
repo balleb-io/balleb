@@ -18,11 +18,11 @@ def genMnistZynet(dataWidth,sigmoidSize):
     weightArray = utils.genWeightArray('weights.txt')
     biasArray = utils.genBiasArray('weights.txt')
     model.compile(pretrained=True,weights=weightArray,biases=biasArray,dataWidth=dataWidth,sigmoidSize=sigmoidSize,weightIntSize=5 ,inputIntSize=1)
-    xilinxUtils.makeVivadoProject('myProject1')
-    xilinxUtils.makeIP('myProject1')
-    # TODO automate IP packaging
-    input("Please package the IP in the Vivado GUI. Press enter when done.")
-    xilinxUtils.makeSystem('myProject1','myBlock1')
+  #  xilinxUtils.makeVivadoProject('myProject1')
+  #  xilinxUtils.makeIP('myProject1')
+  #  # TODO automate IP packaging
+  #  input("Please package the IP in the Vivado GUI. Press enter when done.")
+  #  xilinxUtils.makeSystem('myProject1','myBlock1')
 
 if __name__ == "__main__":
     genMnistZynet(dataWidth=32,sigmoidSize=5)
