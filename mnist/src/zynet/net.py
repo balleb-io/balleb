@@ -23,7 +23,7 @@ class model:
         self.layers.append(layer)
     def getNumLayers(self):
         return self.numLayers
-    def compile(self, pretrained: bool =False, weights: list = [],biases: list = [],dataWidth=16,sigmoidSize=5,weightIntSize=1,inputIntSize=4):
+    def compile(self, pretrained: str ='Yes', weights: list = [],biases: list = [],dataWidth=16,sigmoidSize=5,weightIntSize=1,inputIntSize=4):
         gen_nn(self.numLayers,self.layers,dataWidth,pretrained=pretrained,weights=weights,biases=biases,sigmoidSize=sigmoidSize,weightIntSize=weightIntSize,inputIntSize=inputIntSize)
         if pretrained:
             genWeights(dataWidth, dataWidth - weightIntSize, dataWidth - weightIntSize, weights, biases)

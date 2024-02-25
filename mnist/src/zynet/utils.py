@@ -9,27 +9,34 @@ import bitstring
 '''
 def floatToFix(floatNumber, fracBits, totalBits):             
     fixPoint = int(round(abs(floatNumber) * (2**fracBits)))
+    if floatNumber < 0:
+        fixPoint = ~fixPoint
+        fixPoint += 1
+
     fixPointBinary = bitstring.BitArray(int=fixPoint, length=totalBits)
     bin_list = list(fixPointBinary.bin)
    
-    if(floatNumber < 0):
-        bin_list[0] = "1"
-
     return ''.join(bin_list)
 
 def fixedToFloat(bin_str, fracBits, totalBits) -> float:
-    
-    bit_list = list(bin_str)
-    sign = 1
-    if(bit_list[0] == "1"):
-        sign = -1
-        bit_list[0] = "0"
+    # There's probably a faster way of doing this
+    # Honestly I just don't want to mess with Python's 
+    # Sign extension logic here, I just want to make
+    # Inference work, so,
+    # TODO do this with bitwise manipulation <3
+    if bin_str[0] == '1':
+        inverted_bin_str = ''
+        for x in bin_str:
+            if x == '0': inverted_bin_str+= '1'
+            if x == '1': inverted_bin_str+= '0'
 
-    bin_str = ''.join(bit_list)
+        x = int(inverted_bin_str, 2) + 1
 
-    intRepresentation = int(bin_str, 2)
+        sign = 1 if bin_str[0] == '0' else -1
 
-    return sign * (intRepresentation * 1.0)/(2 ** fracBits)
+        return sign * x / 2**fracBits
+    else:
+        return int(bin_str, 2) / 2**fracBits
 
 def genWeightArray(filename=""):
     with open(filename, "r") as f:

@@ -5,7 +5,7 @@ from shutil import copyfile
 from os import path
 
 sourceFilePath = "./src/fpga/rtl/"
-tbFilePath = "./src/fpga/rtl/"
+tbFilePath = "./src/fpga/rtl/top_tb/"
 weightsFilePath = "./src/fpga/weights/"
 
 def writeIncludeFile(pretrained,numDenseLayers,dataWidth,layers,sigmoidSize,weightIntSize):
@@ -34,6 +34,7 @@ def writeIncludeFile(pretrained,numDenseLayers,dataWidth,layers,sigmoidSize,weig
     copyfile(path.join(path.dirname(__file__), 'db/axi_lite_wrapper.v'), sourceFilePath+'axi_lite_wrapper.v')
     copyfile(path.join(path.dirname(__file__), 'db/neuron.v'), sourceFilePath+'neuron.v')
     copyfile(path.join(path.dirname(__file__), 'db/relu.v'), sourceFilePath+'relu.v')
+    copyfile(path.join(path.dirname(__file__), 'db/passthrough.v'), sourceFilePath+'passthrough.v')
     copyfile(path.join(path.dirname(__file__), 'db/Sig_ROM.v'), sourceFilePath+'Sig_ROM.v')
     copyfile(path.join(path.dirname(__file__), 'db/Weight_Memory.v'), sourceFilePath+'Weight_Memory.v')
     
@@ -44,9 +45,12 @@ def genLayer(layerNum,numNeurons,actType):
     layerData = g.read()
     f.write('module Layer_%d #(parameter NN = 30,numWeight=784,dataWidth=16,layerNum=1,sigmoidSize=10,weightIntWidth=4,actType="relu")\n'%(layerNum))
     f.write(layerData)
+
+    f.write("wire all_valid;")
+    f.write("assign all_valid = &o_valid;")
     
     for i in range(numNeurons):
-        f.write('\nneuron #(.numWeight(numWeight),.layerNo(layerNum),.neuronNo(%d),.dataWidth(dataWidth),.sigmoidSize(sigmoidSize),.weightIntWidth(weightIntWidth),.actType(actType),.weightFile("w_%d_%d.mif"),.biasFile("b_%d_%d.mif"))n_%d(\n\
+        f.write('\nneuron #(.numWeight(numWeight),.layerNo(layerNum),.neuronNo(%d),.dataWidth(dataWidth),.sigmoidSize(sigmoidSize),.weightIntWidth(weightIntWidth),.actType(actType),.weightFile("../../weights/w_%d_%d.mif"),.biasFile("../../weights/b_%d_%d.mif"))n_%d(\n\
         .clk(clk),\n\
         .rst(rst),\n\
         .myinput(x_in),\n\

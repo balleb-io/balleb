@@ -28,7 +28,7 @@ begin
     else if(counter != 0)
     begin
         counter <= counter + 1;
-        if(inDataBuffer[counter*inputWidth+:inputWidth] > maxValue)
+        if($signed(inDataBuffer[counter*inputWidth+:inputWidth]) > $signed(maxValue))
         begin
             maxValue <= inDataBuffer[counter*inputWidth+:inputWidth];
             o_data <= counter;

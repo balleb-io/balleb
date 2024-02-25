@@ -18,7 +18,6 @@
 // Additional Comments:
 // 
 //////////////////////////////////////////////////////////////////////////////////
-`include "include.v"
 
 module zyNet #(
     parameter integer C_S_AXI_DATA_WIDTH    = 32,

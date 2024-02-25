@@ -9,10 +9,10 @@ always @(posedge clk)
 begin
     if($signed(x) >= 0)
     begin
-        if(|x[2*dataWidth-1-:weightIntWidth+1]) //over flow to sign bit of integer part
+        if(|x[2*dataWidth-1:dataWidth]) //over flow to sign bit of integer part
             out <= {1'b0,{(dataWidth-1){1'b1}}}; //positive saturate
         else
-            out <= x[2*dataWidth-1-weightIntWidth-:dataWidth];
+            out <= x[dataWidth-1:0];
     end
     else 
         out <= 0;      

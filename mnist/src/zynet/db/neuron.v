@@ -19,7 +19,6 @@
 // 
 //////////////////////////////////////////////////////////////////////////////////
 //`define DEBUG
-`include "include.v"
 
 module neuron #(parameter layerNo=0,neuronNo=0,numWeight=784,dataWidth=16,sigmoidSize=5,weightIntWidth=1,actType="relu",biasFile="",weightFile="")(
     input           clk,
@@ -88,14 +87,14 @@ module neuron #(parameter layerNo=0,neuronNo=0,numWeight=784,dataWidth=16,sigmoi
 		end
 		always @(posedge clk)
 		begin
-            bias <= {biasReg[addr][dataWidth-1:0],{dataWidth{1'b0}}};
+            bias <= {{dataWidth{biasReg[addr][dataWidth-1]}}, biasReg[addr][dataWidth-1:0]};
         end
 	`else
 		always @(posedge clk)
 		begin
 			if(biasValid & (config_layer_num==layerNo) & (config_neuron_num==neuronNo))
 			begin
-				bias <= {biasValue[dataWidth-1:0],{dataWidth{1'b0}}};
+				bias <= {{dataWidth{biasValue[dataWidth-1]}},biasValue[dataWidth-1:0]};
 			end
 		end
 	`endif
@@ -111,7 +110,7 @@ module neuron #(parameter layerNo=0,neuronNo=0,numWeight=784,dataWidth=16,sigmoi
     
     always @(posedge clk)
     begin
-        mul  <= $signed(myinputd) * $signed(w_out);
+        mul  <= ($signed(myinputd) * $signed(w_out)) >>> ((`dataWidth - `weightIntWidth));
     end
     
     
@@ -184,7 +183,7 @@ module neuron #(parameter layerNo=0,neuronNo=0,numWeight=784,dataWidth=16,sigmoi
 			.out(out)
 		);
 		end
-		else
+		else if (actType== "ReLU")
 		begin:ReLUinst
 			ReLU #(.dataWidth(dataWidth),.weightIntWidth(weightIntWidth)) s1 (
 			.clk(clk),
@@ -192,6 +191,13 @@ module neuron #(parameter layerNo=0,neuronNo=0,numWeight=784,dataWidth=16,sigmoi
 			.out(out)
 		);
 		end
+        else
+        begin:PassthroughInst 
+            Passthrough#(.dataWidth(dataWidth),.weightIntWidth(weightIntWidth)) s1 (
+			.clk(clk),
+			.x(sum),
+			.out(out));
+        end
 	endgenerate
 
     `ifdef DEBUG
