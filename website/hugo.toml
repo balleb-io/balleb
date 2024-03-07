@@ -5,3 +5,7 @@ theme = 'blog'
 sectionPagesMenu = 'main'
 [params]
     hideMadeWithLine = true
+
+[markup.goldmark.renderer]
+unsafe = true
+
