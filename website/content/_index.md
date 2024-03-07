@@ -1,4 +1,4 @@
-# balleb.io <img src="./content.png" alt="image" width="5%" height="auto" style="float: right;">
+# balleb.io
 
 
 AI is the hotspot of the moment, this is a fact! But everyone forgets how to run those things. 
